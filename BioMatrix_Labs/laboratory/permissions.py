@@ -29,3 +29,25 @@ class IsAdminOrScientist(BasePermission):
         if request.method in SAFE_METHODS:
             return True
         return _role(request) in ('admin', 'scientist')
+
+
+class UserManagementPermission(BasePermission):
+    """Reglas de gestión de cuentas (UserViewSet).
+
+    No existe auto-registro público: crear cuentas es una acción de gestión.
+    - admin: acceso completo (leer, crear con cualquier rol, editar, borrar).
+    - scientist: puede listar/leer y crear cuentas, pero la vista fuerza que
+      el rol creado sea 'assistant' (ver UserViewSet.create); no puede
+      editar ni borrar usuarios.
+    - assistant: sin acceso a este recurso.
+    """
+
+    def has_permission(self, request, view):
+        if not _is_authenticated(request):
+            return False
+        role = _role(request)
+        if role == 'admin':
+            return True
+        if role == 'scientist':
+            return request.method in SAFE_METHODS or view.action == 'create'
+        return False

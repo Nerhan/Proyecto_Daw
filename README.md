@@ -1,6 +1,9 @@
 # BioMatrix Labs
 
-API REST (Django + Django REST Framework) para la gestión de un laboratorio científico/clínico: científicos, asistentes, proyectos de investigación, muestras y pruebas de laboratorio con sus resultados.
+Sistema de gestión de un laboratorio científico/clínico: científicos, asistentes, proyectos de investigación, muestras y pruebas de laboratorio con sus resultados. Consta de un **backend** (API REST con Django) y un **frontend** (React + Vite).
+
+- **Backend** (este directorio + `BioMatrix_Labs/`): API REST documentada en esta guía.
+- **Frontend** ([`frontend/`](frontend/)): interfaz web con estética futurista de laboratorio, temas claro/oscuro y vistas diferenciadas por rol. Ver [frontend/README.md](frontend/README.md).
 
 ## Stack
 
@@ -8,6 +11,8 @@ API REST (Django + Django REST Framework) para la gestión de un laboratorio cie
 - Autenticación JWT (`djangorestframework-simplejwt`), conectada al modelo de dominio `laboratory.User` (no al `User` interno de Django, que solo se usa para `/admin/`)
 - PostgreSQL (Supabase) en producción/desarrollo, SQLite en memoria para tests
 - Documentación interactiva con `drf-spectacular` (Swagger / Redoc)
+- CORS habilitado (`django-cors-headers`) para el frontend
+- Frontend: React 18 + TypeScript + Vite 6 + React Router + Axios
 
 ## Requisitos previos
 
@@ -28,6 +33,7 @@ cp BioMatrix_Labs/.env.example BioMatrix_Labs/.env
 
 cd BioMatrix_Labs
 python manage.py migrate
+python manage.py create_admin   # crea el primer usuario admin (ver "Autenticación")
 python manage.py runserver
 ```
 
@@ -49,16 +55,20 @@ Se leen desde `BioMatrix_Labs/.env` (no se commitea; ver `.env.example`).
 
 El login no usa el `TokenObtainPairView` por defecto de `simplejwt` porque este proyecto tiene su propio modelo de usuario de dominio (`laboratory.User`, con `role` y `password_hash`), separado del `User` interno de Django.
 
-1. **Registro:** `POST /api/users/` (abierto, sin token) con `email`, `password`, `role`.
-2. **Login:** `POST /api/token/` con `email` y `password` → devuelve `access` y `refresh`.
-3. **Refresh:** `POST /api/token/refresh/` con `refresh` → devuelve un nuevo `access`.
-4. Usar el token en cada request: header `Authorization: Bearer <access_token>`.
+**No existe auto-registro público.** Dar de alta una cuenta es una acción de gestión:
+
+1. **Bootstrap del primer admin:** `python manage.py create_admin` (comando de management, se corre desde el servidor/terminal, no vía HTTP).
+2. **Alta de nuevas cuentas:** `POST /api/users/` con `email`, `password`, `role`, autenticado como `admin` o `scientist` (ver reglas de rol abajo).
+3. **Login:** `POST /api/token/` con `email` y `password` → devuelve `access`, `refresh` y `role`.
+4. **Refresh:** `POST /api/token/refresh/` con `refresh` → devuelve un nuevo `access`.
+5. Usar el token en cada request: header `Authorization: Bearer <access_token>`.
 
 ## Permisos por rol
 
 `laboratory.User.role` puede ser `admin`, `scientist` o `assistant`.
 
-- **Lectura** (`GET`): cualquier usuario autenticado.
+- **Gestión de cuentas** (`/api/users/`): `admin` tiene control total (crear con cualquier rol, editar, borrar). `scientist` puede listar y crear cuentas, pero solo con `role=assistant` (el backend lo valida y rechaza cualquier otro rol con 403); no puede editar ni borrar usuarios. `assistant` no tiene acceso a este recurso.
+- **Lectura** (`GET`) del resto de recursos: cualquier usuario autenticado.
 - **Escritura en personal, proyectos y catálogo de tests** (`Scientist`, `Assistant`, `Project`, `Test`, `AssistantProject`): solo `admin` o `scientist`.
 - **Escritura en trabajo de banco** (`Sample`, `SampleTest`): cualquier usuario autenticado, incluido `assistant`, ya que registrar muestras y resultados es su trabajo diario.
 
@@ -92,5 +102,5 @@ Los tests corren contra SQLite en memoria (configurado en `settings.py`), así q
 
 ## Limitaciones conocidas
 
-- No hay permisos a nivel de objeto en `UserViewSet` (por ejemplo, cualquier usuario autenticado podría editar el `role` de otro usuario vía `PATCH /api/users/<id>/`); sería el siguiente paso natural si el proyecto crece.
+- `admin` no tiene restricciones adicionales sobre `UserViewSet` (puede editar el `role` o `status` de cualquier usuario, incluido otro admin); es el rol de máxima confianza del sistema, por diseño.
 - El campo `status` de cada modelo (soft-delete) no filtra automáticamente los querysets: un registro `inactive` sigue siendo visible en la API salvo que se filtre explícitamente con `?status=active`.

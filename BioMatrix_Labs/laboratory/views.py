@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers as drf_serializers, status, viewsets
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from laboratory.models import (
     User, Scientist, Assistant, Project, Sample, Test, SampleTest, AssistantProject
 )
-from laboratory.permissions import IsAdminOrScientist
+from laboratory.permissions import IsAdminOrScientist, UserManagementPermission
 from laboratory.serializers import (
     UserSerializer, UserDetailSerializer,
     ScientistSerializer,
@@ -22,11 +23,7 @@ from laboratory.serializers import (
 
 
 class AuditedModelViewSet(viewsets.ModelViewSet):
-    """Rellena created_id/modified_id con el usuario autenticado.
-
-    Queda en None cuando el registro se crea sin sesión (p. ej. el
-    auto-registro en UserViewSet.create, que es AllowAny).
-    """
+    """Rellena created_id/modified_id con el usuario autenticado."""
 
     def _current_user(self):
         user = self.request.user
@@ -41,7 +38,11 @@ class AuditedModelViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(AuditedModelViewSet):
+    # No hay auto-registro público: dar de alta cuentas es una acción de
+    # gestión (ver UserManagementPermission). El primer admin del sistema se
+    # crea con `python manage.py create_admin` (comando de management).
     queryset = User.objects.all().order_by('-id')
+    permission_classes = [UserManagementPermission]
 
     def get_serializer_class(self):
         # Si es una consulta de listado o detalle (GET), devolvemos el JSON anidado complejo
@@ -49,13 +50,12 @@ class UserViewSet(AuditedModelViewSet):
             return UserDetailSerializer
         return UserSerializer
 
-    def get_permissions(self):
-        # El registro (create) es la única vía para dar de alta el primer
-        # usuario del sistema, por eso queda abierto; el resto de acciones
-        # requiere estar autenticado.
-        if self.action == 'create':
-            return [AllowAny()]
-        return [IsAuthenticated()]
+    def create(self, request, *args, **kwargs):
+        # Un científico solo puede dar de alta cuentas de asistente; no
+        # puede crearse a sí mismo otro científico ni un admin.
+        if getattr(request.user, 'role', None) == 'scientist' and request.data.get('role') != 'assistant':
+            raise PermissionDenied('Un científico solo puede crear cuentas de asistente.')
+        return super().create(request, *args, **kwargs)
 
 
 class ScientistViewSet(AuditedModelViewSet):

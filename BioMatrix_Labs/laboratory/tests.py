@@ -66,22 +66,16 @@ class UserPasswordTests(TestCase):
 
 
 class AuthFlowTests(APITestCase):
-    def test_register_then_login_returns_tokens(self):
-        register_response = self.client.post('/api/users/', {
+    def test_anonymous_self_registration_is_rejected(self):
+        # No existe auto-registro público: dar de alta usuarios es una
+        # acción de gestión (solo admin/scientist autenticados).
+        response = self.client.post('/api/users/', {
             'email': 'nuevo@unsa.edu.pe',
             'password': 'claveSegura123',
             'role': 'assistant',
         })
-        self.assertEqual(register_response.status_code, status.HTTP_201_CREATED)
-        self.assertNotIn('password', register_response.data)
-
-        login_response = self.client.post('/api/token/', {
-            'email': 'nuevo@unsa.edu.pe',
-            'password': 'claveSegura123',
-        })
-        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', login_response.data)
-        self.assertIn('refresh', login_response.data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertFalse(User.objects.filter(email='nuevo@unsa.edu.pe').exists())
 
     def test_login_with_wrong_password_is_rejected(self):
         user = User(email='login@unsa.edu.pe', role='admin')
@@ -156,3 +150,74 @@ class RolePermissionTests(APITestCase):
         self._auth_client('asistente@unsa.edu.pe')
         response = self.client.get('/api/projects/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class UserManagementPermissionTests(APITestCase):
+    """Solo la gestión de cuentas (UserViewSet) puede dar de alta usuarios,
+    y un científico solo puede crear cuentas de asistente."""
+
+    def setUp(self):
+        self.admin_user = self._create_user('admin@unsa.edu.pe', 'admin')
+        self.scientist_user = self._create_user('cientifico@unsa.edu.pe', 'scientist')
+        self.assistant_user = self._create_user('asistente@unsa.edu.pe', 'assistant')
+
+    def _create_user(self, email, role):
+        user = User(email=email, role=role)
+        user.set_password('claveSegura123')
+        user.save()
+        return user
+
+    def _auth_client(self, email):
+        response = self.client.post('/api/token/', {'email': email, 'password': 'claveSegura123'})
+        access = response.data['access']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+
+    def test_admin_can_create_user_with_any_role(self):
+        self._auth_client('admin@unsa.edu.pe')
+        response = self.client.post('/api/users/', {
+            'email': 'nuevo.cientifico@unsa.edu.pe',
+            'password': 'claveSegura123',
+            'role': 'scientist',
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_scientist_can_create_assistant_user(self):
+        self._auth_client('cientifico@unsa.edu.pe')
+        response = self.client.post('/api/users/', {
+            'email': 'nuevo.asistente@unsa.edu.pe',
+            'password': 'claveSegura123',
+            'role': 'assistant',
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_scientist_cannot_create_scientist_or_admin_user(self):
+        self._auth_client('cientifico@unsa.edu.pe')
+        response = self.client.post('/api/users/', {
+            'email': 'otro.cientifico@unsa.edu.pe',
+            'password': 'claveSegura123',
+            'role': 'scientist',
+        })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(User.objects.filter(email='otro.cientifico@unsa.edu.pe').exists())
+
+    def test_assistant_cannot_access_users_endpoint(self):
+        self._auth_client('asistente@unsa.edu.pe')
+        list_response = self.client.get('/api/users/')
+        self.assertEqual(list_response.status_code, status.HTTP_403_FORBIDDEN)
+
+        create_response = self.client.post('/api/users/', {
+            'email': 'intento@unsa.edu.pe',
+            'password': 'claveSegura123',
+            'role': 'assistant',
+        })
+        self.assertEqual(create_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_scientist_cannot_update_or_delete_users(self):
+        self._auth_client('cientifico@unsa.edu.pe')
+        update_response = self.client.patch(
+            f'/api/users/{self.assistant_user.id}/', {'status': 'suspended'}
+        )
+        self.assertEqual(update_response.status_code, status.HTTP_403_FORBIDDEN)
+
+        delete_response = self.client.delete(f'/api/users/{self.assistant_user.id}/')
+        self.assertEqual(delete_response.status_code, status.HTTP_403_FORBIDDEN)
