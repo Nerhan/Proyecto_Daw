@@ -1,0 +1,8 @@
+from .UserSerializer import UserSerializer, UserDetailSerializer
+from .ScientistSerializer import ScientistSerializer
+from .AssistantSerializer import AssistantSerializer
+from .ProjectSerializer import ProjectSerializer, ProjectDetailSerializer
+from .SampleSerializer import SampleSerializer
+from .TestSerializer import TestSerializer
+from .SampleTestSerializer import SampleTestSerializer
+from .AssistantProjectSerializer import AssistantProjectSerializer
