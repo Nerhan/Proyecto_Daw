@@ -1,8 +1,13 @@
 import uuid
 from django.db import models
+from django.contrib.auth.hashers import make_password, check_password as check_password_hash
 from laboratory.validators import validate_unsa_email
 
 class User(models.Model):
+
+    # Permite que DRF (IsAuthenticated) trate las instancias de este modelo
+    # como usuarios autenticados una vez resueltas por LaboratoryJWTAuthentication.
+    is_authenticated = True
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -39,3 +44,11 @@ class User(models.Model):
         if self.email:
             self.email = self.email.strip().lower()
         super(User, self).save(*args, **kwargs)
+
+    def set_password(self, raw_password):
+        self.password_hash = make_password(raw_password)
+
+    def check_password(self, raw_password):
+        if not self.password_hash:
+            return False
+        return check_password_hash(raw_password, self.password_hash)

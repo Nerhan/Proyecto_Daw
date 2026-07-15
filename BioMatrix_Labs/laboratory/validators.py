@@ -21,5 +21,5 @@ def validate_storage_temperature(value):
         raise ValidationError('La temperatura de almacenamiento biológico no puede superar los 4.0°C.')
 
 def validate_positive_duration(value):
-    if value and value <= 0:
+    if value is not None and value <= 0:
         raise ValidationError('La duración estimada del protocolo debe ser mayor a 0 minutos.')
