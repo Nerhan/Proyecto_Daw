@@ -22,7 +22,6 @@ from laboratory.serializers import (
 
 
 class AuditedModelViewSet(viewsets.ModelViewSet):
-    """Rellena created_id/modified_id con el usuario autenticado."""
 
     def _current_user(self):
         user = self.request.user
@@ -37,12 +36,6 @@ class AuditedModelViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(AuditedModelViewSet):
-    # No se admite alta directa de cuentas (sin POST): las cuentas de
-    # scientist/assistant se crean junto con su perfil de Científico o
-    # Asistente (ver ScientistSerializer/AssistantSerializer, que
-    # gestionan el User internamente). El primer admin del sistema se crea
-    # con `python manage.py create_admin`. Esta vista queda solo para que
-    # el admin administre cuentas ya existentes.
     queryset = User.objects.all().order_by('-id')
     permission_classes = [UserManagementPermission]
     http_method_names = ['get', 'put', 'patch', 'delete', 'head', 'options']
@@ -55,9 +48,6 @@ class UserViewSet(AuditedModelViewSet):
 
 
 class ScientistViewSet(AuditedModelViewSet):
-    # Dar de alta/editar un científico implica crear o modificar su cuenta
-    # de acceso (email/password), por eso queda reservado al admin, igual
-    # que la gestión de cuentas en general (ver IsAdminOrReadOnly).
     queryset = Scientist.objects.all().order_by('-id')
     serializer_class = ScientistSerializer
     permission_classes = [IsAdminOrReadOnly]
@@ -66,8 +56,6 @@ class ScientistViewSet(AuditedModelViewSet):
 
 
 class AssistantViewSet(AuditedModelViewSet):
-    # Admin y scientist pueden dar de alta asistentes (y su cuenta de
-    # acceso), igual que ya podían crear cuentas de assistant en /users/.
     queryset = Assistant.objects.all().order_by('-id')
     serializer_class = AssistantSerializer
     permission_classes = [IsAdminOrScientist]
@@ -104,8 +92,6 @@ class TestViewSet(AuditedModelViewSet):
 
 
 class SampleTestViewSet(AuditedModelViewSet):
-    # Cualquier usuario autenticado (incluye assistant) puede registrar y
-    # actualizar resultados: es el trabajo diario de laboratorio.
     queryset = SampleTest.objects.all().order_by('-id')
     serializer_class = SampleTestSerializer
     permission_classes = [IsAuthenticated]
@@ -114,8 +100,6 @@ class SampleTestViewSet(AuditedModelViewSet):
 
 
 class AssistantProjectViewSet(AuditedModelViewSet):
-    # Asignar personal a un proyecto es una decisión de gestión, no trabajo
-    # de banco: solo admin/scientist.
     queryset = AssistantProject.objects.all().order_by('-id')
     serializer_class = AssistantProjectSerializer
     permission_classes = [IsAdminOrScientist]
@@ -134,9 +118,6 @@ class TokenResponseSerializer(drf_serializers.Serializer):
 
 
 class LoginView(APIView):
-    """Login contra laboratory.User (el modelo de dominio real de la app),
-    no contra el User interno de Django que solo se usa para /admin/."""
-
     permission_classes = [AllowAny]
 
     @extend_schema(request=LoginSerializer, responses={200: TokenResponseSerializer})

@@ -5,8 +5,6 @@ from laboratory.validators import validate_unsa_email
 
 class User(models.Model):
 
-    # Permite que DRF (IsAuthenticated) trate las instancias de este modelo
-    # como usuarios autenticados una vez resueltas por LaboratoryJWTAuthentication.
     is_authenticated = True
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

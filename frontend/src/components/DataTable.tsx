@@ -29,7 +29,6 @@ function fmtDate(v: unknown): string {
 
 function resolveRef(value: unknown, col: ColumnConfig, refs: ReferenceMap): string {
   if (value == null) return '—'
-  // FK anidado (objeto) o id plano.
   if (typeof value === 'object') return (col.optionLabel?.(value as ApiRecord)) || '—'
   const obj = refs[col.ref ?? '']?.byId?.[value as string]
   return obj && col.optionLabel ? col.optionLabel(obj) : '—'

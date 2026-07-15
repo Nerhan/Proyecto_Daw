@@ -3,9 +3,6 @@ from rest_framework import serializers
 from laboratory.models.User import User
 
 class UserSerializer(serializers.ModelSerializer):
-    # write_only: nunca se debe devolver un hash de password en una respuesta.
-    # required=False a nivel de campo porque en un update (PUT) no se debería
-    # forzar a reenviar la contraseña; se exige explícitamente en create().
     password = serializers.CharField(write_only=True, required=False, style={'input_type': 'password'})
 
     class Meta:

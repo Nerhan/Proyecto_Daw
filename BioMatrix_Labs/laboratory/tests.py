@@ -16,7 +16,7 @@ from laboratory.validators import (
 
 class ValidatorTests(TestCase):
     def test_unsa_email_accepts_institutional_domain(self):
-        validate_unsa_email('alumno@unsa.edu.pe')  # no debe lanzar
+        validate_unsa_email('alumno@unsa.edu.pe')
 
     def test_unsa_email_rejects_other_domains(self):
         with self.assertRaises(ValidationError):
@@ -67,8 +67,6 @@ class UserPasswordTests(TestCase):
 
 class AuthFlowTests(APITestCase):
     def test_anonymous_self_registration_is_rejected(self):
-        # No existe auto-registro público: dar de alta usuarios es una
-        # acción de gestión (solo admin/scientist autenticados).
         response = self.client.post('/api/users/', {
             'email': 'nuevo@unsa.edu.pe',
             'password': 'claveSegura123',
@@ -153,10 +151,6 @@ class RolePermissionTests(APITestCase):
 
 
 class UserManagementPermissionTests(APITestCase):
-    """/api/users/ ya no admite alta directa (POST): las cuentas se crean
-    desde Científicos/Asistentes. Esta vista queda para que el admin
-    administre cuentas ya existentes (leer/editar/borrar)."""
-
     def setUp(self):
         self.admin_user = self._create_user('admin@unsa.edu.pe', 'admin')
         self.scientist_user = self._create_user('cientifico@unsa.edu.pe', 'scientist')
@@ -204,9 +198,6 @@ class UserManagementPermissionTests(APITestCase):
 
 
 class ScientistAccountCreationTests(APITestCase):
-    """Crear un Científico da de alta su cuenta de acceso (email+password);
-    solo el admin puede hacerlo."""
-
     def setUp(self):
         self.admin_user = self._create_user('admin@unsa.edu.pe', 'admin')
         self.scientist_user = self._create_user('cientifico@unsa.edu.pe', 'scientist')
@@ -273,19 +264,15 @@ class ScientistAccountCreationTests(APITestCase):
         scientist_count_before = Scientist.objects.count()
 
         response = self.client.post('/api/scientists/', self._payload(
-            email='cientifico@unsa.edu.pe',  # ya existe (self.scientist_user)
+            email='cientifico@unsa.edu.pe',
             license_number='LIC-77002',
         ))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # La transacción no debe dejar un Scientist huérfano ni un User de más.
         self.assertEqual(User.objects.count(), user_count_before)
         self.assertEqual(Scientist.objects.count(), scientist_count_before)
 
 
 class AssistantAccountCreationTests(APITestCase):
-    """Crear un Asistente da de alta su cuenta de acceso; admin y
-    científico pueden hacerlo, el propio asistente no."""
-
     def setUp(self):
         self.admin_user = self._create_user('admin@unsa.edu.pe', 'admin')
         self.scientist_user = self._create_user('cientifico@unsa.edu.pe', 'scientist')

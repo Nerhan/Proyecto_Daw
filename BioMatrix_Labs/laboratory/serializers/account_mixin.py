@@ -7,18 +7,6 @@ from laboratory.validators import validate_unsa_email
 
 
 class AccountLinkedSerializerMixin:
-    """Mixin para serializers de perfiles (Scientist/Assistant) que también
-    dan de alta/gestionan la cuenta de acceso (User) vinculada 1 a 1.
-
-    La subclase debe:
-    - fijar `account_role` ('scientist' | 'assistant'),
-    - declarar los campos `email` (EmailField, write_only), `password`
-      (CharField, write_only) y `user_email` (SerializerMethodField,
-      read_only) en su propia definición,
-    - incluir esos tres nombres en Meta.fields (sin incluir 'user': se
-      gestiona internamente, no es editable directo desde la API).
-    """
-
     account_role = None
 
     def validate_email(self, value):
@@ -30,9 +18,6 @@ class AccountLinkedSerializerMixin:
         return value
 
     def validate(self, attrs):
-        # En creación, se está dando de alta la cuenta: email y password
-        # son obligatorios. En edición son opcionales (solo se tocan si se
-        # envían).
         if self.instance is None:
             if not attrs.get('email'):
                 raise serializers.ValidationError({'email': 'Este campo es requerido para crear la cuenta de acceso.'})

@@ -64,7 +64,6 @@ export default function ResourcePage() {
     load()
   }, [load])
 
-  // Reinicia a la página 1 al cambiar de recurso.
   useEffect(() => {
     setPage(1)
     setSearch('')
@@ -103,7 +102,6 @@ export default function ResourcePage() {
       await api.delete(`/${resource.endpoint}/${confirm.id}/`)
       toast.success(`${resource.singular} eliminado.`)
       setConfirm(null)
-      // Si borramos el último de la página, retrocede una página.
       if (rows.length === 1 && page > 1) setPage((p) => p - 1)
       else load()
     } catch (e) {

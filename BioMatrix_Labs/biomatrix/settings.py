@@ -22,7 +22,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# Se lee desde el entorno (.env en local, variables de entorno reales en producción).
 SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -30,7 +29,6 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-# CORS: orígenes del frontend (Vite) autorizados a consumir la API.
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
@@ -99,7 +97,6 @@ if os.environ.get('DATABASE_URL'):
         'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
     }
 else:
-    # Desarrollo local: credenciales de Postgres/Supabase leídas desde .env
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -111,8 +108,6 @@ else:
         }
     }
 
-# Los tests corren contra SQLite en memoria: no dependen de permisos de
-# CREATE DATABASE en Supabase/Postgres administrado y son mucho más rápidos.
 if 'test' in sys.argv or 'pytest' in sys.modules:
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',

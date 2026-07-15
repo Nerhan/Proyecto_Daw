@@ -37,7 +37,6 @@ export const tokenStore = {
 
 const api = axios.create({ baseURL: BASE_URL })
 
-// Adjunta el access token en cada request.
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = tokenStore.access
   if (token) config.headers.Authorization = `Bearer ${token}`
@@ -48,7 +47,6 @@ interface RetryableConfig extends InternalAxiosRequestConfig {
   _retry?: boolean
 }
 
-// Refresh transparente ante un 401.
 let refreshing: Promise<{ data: { access: string } }> | null = null
 
 api.interceptors.response.use(
@@ -80,7 +78,6 @@ api.interceptors.response.use(
   }
 )
 
-/** Convierte un error de axios/DRF en un mensaje legible. */
 export function apiErrorMessage(error: unknown, fallback = 'Ocurrió un error inesperado.'): string {
   if (!axios.isAxiosError(error)) {
     return error instanceof Error ? error.message : fallback
@@ -91,7 +88,6 @@ export function apiErrorMessage(error: unknown, fallback = 'Ocurrió un error in
   if (typeof data === 'object' && data !== null) {
     const obj = data as Record<string, unknown>
     if (typeof obj.detail === 'string') return obj.detail
-    // Errores de validación por campo: { campo: ["msg", ...] }
     const parts: string[] = []
     for (const [key, val] of Object.entries(obj)) {
       const text = Array.isArray(val) ? val.join(' ') : String(val)

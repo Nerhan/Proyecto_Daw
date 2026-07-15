@@ -1,19 +1,3 @@
-/* ============================================================
-   Configuración declarativa de recursos de la API.
-   Cada entrada genera automáticamente una página CRUD completa.
-
-   Permisos por recurso (independientes entre sí):
-   - view:   roles que pueden ver la sección y listar registros
-   - create: roles que pueden crear
-   - update: roles que pueden editar
-   - del:    roles que pueden eliminar
-
-   Tipos de campo: text, email, password, textarea, number, select, ref
-   - select: usa `options` (array estático o función `(actingRole) => array`,
-     para restringir opciones según quién está creando/editando)
-   - ref:    FK; usa `ref: '<endpoint>'` y `optionLabel(obj)`
-   ============================================================ */
-
 import type { ApiRecord, Role, Status, SampleTestStatus, UserStatus } from '../types/models'
 import type { IconName } from '../components/Icon'
 
@@ -46,9 +30,6 @@ export interface FieldConfig {
   options?: SelectOption[] | ((actingRole: Role | undefined) => SelectOption[])
   ref?: string
   optionLabel?: (obj: ApiRecord) => string
-  /** Al editar, precarga el valor inicial desde este campo del registro en
-   * vez de `name` (útil para campos write_only cuya versión legible tiene
-   * otro nombre en la respuesta, p. ej. `email` se precarga desde `user_email`). */
   sourceKey?: string
 }
 
@@ -102,10 +83,6 @@ export const RESOURCES: ResourceConfig[] = [
     singular: 'Usuario',
     icon: 'users',
     group: 'Administración',
-    // Ya no se crean cuentas sueltas aquí: se dan de alta automáticamente
-    // al crear un Científico o un Asistente (ver esos recursos abajo). Esta
-    // sección queda solo para que el admin administre cuentas existentes
-    // (activar/suspender, cambiar email o contraseña, eliminar).
     view: ['admin'],
     create: [],
     update: ['admin'],
@@ -131,9 +108,6 @@ export const RESOURCES: ResourceConfig[] = [
     singular: 'Científico',
     icon: 'scientist',
     group: 'Personal',
-    // Crear un científico da de alta su cuenta de acceso (email+password),
-    // igual que antes solo se podía crear una cuenta role=scientist desde
-    // admin: por eso la gestión completa queda reservada al admin.
     view: ['admin', 'scientist', 'assistant'],
     create: ['admin'],
     update: ['admin'],
@@ -166,8 +140,6 @@ export const RESOURCES: ResourceConfig[] = [
     singular: 'Asistente',
     icon: 'assistant',
     group: 'Personal',
-    // Crear un asistente da de alta su cuenta de acceso; admin y científico
-    // pueden hacerlo (igual que ya podían crear cuentas role=assistant).
     view: ['admin', 'scientist', 'assistant'],
     create: ['admin', 'scientist'],
     update: ['admin', 'scientist'],
@@ -200,7 +172,6 @@ export const RESOURCES: ResourceConfig[] = [
     singular: 'Proyecto',
     icon: 'project',
     group: 'Investigación',
-    // Solo admin y científicos crean/editan/eliminan proyectos.
     view: ['admin', 'scientist', 'assistant'],
     create: ['admin', 'scientist'],
     update: ['admin', 'scientist'],
@@ -229,7 +200,6 @@ export const RESOURCES: ResourceConfig[] = [
     singular: 'Muestra',
     icon: 'sample',
     group: 'Investigación',
-    // Cualquier rol autenticado puede registrar muestras (trabajo de banco).
     view: ['admin', 'scientist', 'assistant'],
     create: ['admin', 'scientist', 'assistant'],
     update: ['admin', 'scientist', 'assistant'],
@@ -281,7 +251,6 @@ export const RESOURCES: ResourceConfig[] = [
     singular: 'Resultado de prueba',
     icon: 'results',
     group: 'Investigación',
-    // Cualquier rol autenticado puede registrar resultados (trabajo de banco).
     view: ['admin', 'scientist', 'assistant'],
     create: ['admin', 'scientist', 'assistant'],
     update: ['admin', 'scientist', 'assistant'],
@@ -333,7 +302,6 @@ export const RESOURCE_BY_KEY: Record<string, ResourceConfig> = Object.fromEntrie
   RESOURCES.map((r) => [r.key, r])
 )
 
-/** Recursos visibles para un rol dado. */
 export function resourcesForRole(role: Role | undefined): ResourceConfig[] {
   if (!role) return []
   return RESOURCES.filter((r) => r.view.includes(role))
@@ -351,7 +319,6 @@ export function canDelete(resource: ResourceConfig, role: Role | undefined): boo
   return !!role && resource.del.includes(role)
 }
 
-/** Resuelve las opciones de un campo select, aplicando la restricción por rol si corresponde. */
 export function resolveOptions(field: FieldConfig, actingRole: Role | undefined): SelectOption[] {
   if (!field.options) return []
   return typeof field.options === 'function' ? field.options(actingRole) : field.options

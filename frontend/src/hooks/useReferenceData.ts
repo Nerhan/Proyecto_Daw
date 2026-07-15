@@ -10,10 +10,6 @@ export interface ReferenceBucket {
 
 export type ReferenceMap = Record<string, ReferenceBucket>
 
-/**
- * Carga las listas de todos los endpoints referenciados (FK) por un recurso,
- * tanto en columnas como en campos de formulario.
- */
 export function useReferenceData(resource: ResourceConfig | undefined): { refs: ReferenceMap; loading: boolean } {
   const [refs, setRefs] = useState<ReferenceMap>({})
   const [loading, setLoading] = useState(true)
@@ -63,7 +59,6 @@ export function useReferenceData(resource: ResourceConfig | undefined): { refs: 
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resource?.key])
 
   return { refs, loading }

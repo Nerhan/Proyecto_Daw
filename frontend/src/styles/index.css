@@ -1,6 +1,5 @@
 
 :root {
-  /* Acentos compartidos */
   --blue: #29b6ff;
   --blue-deep: #0a84ff;
   --green: #00e6a0;
@@ -16,7 +15,6 @@
   --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ---------- Tema oscuro (por defecto) ---------- */
 :root,
 :root[data-theme='dark'] {
   --bg: #060a14;
@@ -36,7 +34,6 @@
   --header-blur: rgba(6, 10, 20, 0.7);
 }
 
-/* ---------- Tema claro ---------- */
 :root[data-theme='light'] {
   --bg: #eef4fb;
   --bg-2: #ffffff;
@@ -75,7 +72,6 @@ body {
   transition: background var(--transition), color var(--transition);
 }
 
-/* Fondo futurista: rejilla + halos radiales */
 #root::before {
   content: '';
   position: fixed;
@@ -104,7 +100,6 @@ button {
   background: rgba(41, 182, 255, 0.3);
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -117,9 +112,6 @@ button {
   border-radius: 20px;
 }
 
-/* ============================================================
-   Utilidades tipográficas
-   ============================================================ */
 .mono {
   font-family: var(--font-mono);
 }
@@ -134,9 +126,6 @@ button {
   color: var(--text-dim);
 }
 
-/* ============================================================
-   Botones
-   ============================================================ */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -199,9 +188,6 @@ button {
   border-radius: var(--radius-sm);
 }
 
-/* ============================================================
-   Cards / paneles
-   ============================================================ */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -213,9 +199,6 @@ button {
   padding: 22px;
 }
 
-/* ============================================================
-   Formularios
-   ============================================================ */
 .field {
   display: flex;
   flex-direction: column;
@@ -261,9 +244,6 @@ button {
   font-size: 0.76rem;
 }
 
-/* ============================================================
-   Badges / chips de estado
-   ============================================================ */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -312,9 +292,6 @@ button {
   border-color: rgba(41, 182, 255, 0.3);
 }
 
-/* ============================================================
-   Tabla de datos
-   ============================================================ */
 .table-wrap {
   overflow-x: auto;
   border-radius: var(--radius);
@@ -362,9 +339,6 @@ table.data tbody tr:last-child td {
   justify-content: flex-end;
 }
 
-/* ============================================================
-   Layout general (sidebar + main)
-   ============================================================ */
 .app-shell {
   display: grid;
   grid-template-columns: 264px 1fr;
@@ -408,8 +382,6 @@ table.data tbody tr:last-child td {
 .nav {
   flex: 1;
   overflow-y: auto;
-  /* padding-left igual al de .brand (22px) para que el texto de los items
-     quede alineado verticalmente con "BioMatrix Labs" de arriba. */
   padding: 14px 12px 14px 22px;
   display: flex;
   flex-direction: column;
@@ -426,9 +398,6 @@ table.data tbody tr:last-child td {
 .nav-item {
   display: flex;
   align-items: center;
-  /* gap mayor que el icono (18px) compensa que el logo del brand (38px) es
-     más ancho, así el texto "Muestras", "Proyectos", etc. arranca en la
-     misma columna que el texto "BioMatrix Labs". */
   gap: 18px;
   padding: 10px 14px;
   border-radius: var(--radius-sm);
@@ -538,7 +507,6 @@ table.data tbody tr:last-child td {
   flex: 1;
 }
 
-/* Toggle de tema */
 .theme-toggle {
   width: 42px;
   height: 42px;
@@ -555,9 +523,6 @@ table.data tbody tr:last-child td {
   box-shadow: var(--glow-blue);
 }
 
-/* ============================================================
-   Dashboard / stats
-   ============================================================ */
 .grid {
   display: grid;
   gap: 18px;
@@ -597,9 +562,6 @@ table.data tbody tr:last-child td {
   color: var(--blue);
 }
 
-/* ============================================================
-   Modal
-   ============================================================ */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -658,9 +620,6 @@ table.data tbody tr:last-child td {
   }
 }
 
-/* ============================================================
-   Toasts
-   ============================================================ */
 .toast-stack {
   position: fixed;
   right: 22px;
@@ -699,9 +658,6 @@ table.data tbody tr:last-child td {
   }
 }
 
-/* ============================================================
-   Login
-   ============================================================ */
 .auth-wrap {
   min-height: 100vh;
   display: grid;
@@ -774,9 +730,6 @@ table.data tbody tr:last-child td {
   border-color: rgba(255, 92, 124, 0.3);
 }
 
-/* ============================================================
-   Estados varios
-   ============================================================ */
 .page-head {
   display: flex;
   align-items: flex-end;
@@ -868,9 +821,6 @@ table.data tbody tr:last-child td {
   font-family: var(--font-mono);
 }
 
-/* ============================================================
-   Responsive
-   ============================================================ */
 .menu-btn {
   display: none;
 }

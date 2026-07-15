@@ -19,7 +19,6 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-/** Decodifica el payload de un JWT sin verificar (solo para leer claims). */
 function decodeJwt(token: string): { user_id?: string } {
   try {
     const payload = token.split('.')[1]

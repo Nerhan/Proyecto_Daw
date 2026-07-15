@@ -6,9 +6,6 @@ from laboratory.models import User
 
 
 class LaboratoryJWTAuthentication(JWTAuthentication):
-    """Autentica contra laboratory.User en lugar del AUTH_USER_MODEL por
-    defecto de Django, que en este proyecto solo se usa para /admin/."""
-
     def get_user(self, validated_token):
         user_id = validated_token.get('user_id')
         if user_id is None:
@@ -26,9 +23,6 @@ class LaboratoryJWTAuthentication(JWTAuthentication):
 
 
 class LaboratoryJWTAuthenticationScheme(OpenApiAuthenticationExtension):
-    """Le dice a drf-spectacular cómo documentar LaboratoryJWTAuthentication
-    (reutiliza el esquema 'BearerAuth' ya declarado en SPECTACULAR_SETTINGS)."""
-
     target_class = LaboratoryJWTAuthentication
     name = 'BearerAuth'
 

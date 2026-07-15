@@ -34,7 +34,6 @@ urlpatterns = [
     # Renderiza la interfaz alternativa Redoc (es super limpia y elegante)
     path('api/docs/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     
-    # Login contra laboratory.User (no contra el User interno de Django).
     path('api/token/', LoginView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

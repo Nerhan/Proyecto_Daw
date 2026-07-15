@@ -1,6 +1,5 @@
 import type { SVGProps } from 'react'
 
-// Set de iconos SVG inline (sin dependencias externas), trazo fino tipo "lab/tech".
 const PATHS = {
   dashboard: 'M4 13h6V4H4v9zm0 7h6v-5H4v5zm9 0h6V11h-6v9zm0-16v5h6V4h-6z',
   users:

@@ -56,12 +56,10 @@ export default function Dashboard() {
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role])
 
   return (
     <div>
-      {/* Hero */}
       <div className="card card-pad" style={{ marginBottom: 22, position: 'relative', overflow: 'hidden' }}>
         <div
           style={{
@@ -87,7 +85,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats */}
       {loading ? (
         <div className="spinner" />
       ) : (
@@ -115,7 +112,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Accesos rápidos de escritura */}
       <div style={{ marginTop: 26 }}>
         <div className="eyebrow" style={{ marginBottom: 12 }}>
           Acciones rápidas

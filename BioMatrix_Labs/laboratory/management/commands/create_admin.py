@@ -8,14 +8,6 @@ from django.core.exceptions import ValidationError
 
 
 class Command(BaseCommand):
-    """Crea la primera cuenta admin de laboratory.User.
-
-    Necesario porque el auto-registro público está deshabilitado: dar de
-    alta usuarios es una acción de gestión reservada a admin/scientist
-    (ver laboratory.permissions.UserManagementPermission), así que el primer
-    admin del sistema no puede crearse a través de la API.
-    """
-
     help = 'Crea una cuenta admin de laboratory.User (bootstrap inicial del sistema).'
 
     def add_arguments(self, parser):

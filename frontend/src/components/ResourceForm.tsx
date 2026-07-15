@@ -3,7 +3,6 @@ import { resolveOptions, type FieldConfig, type ResourceConfig } from '../config
 import type { ReferenceMap } from '../hooks/useReferenceData'
 import type { ApiRecord, Role } from '../types/models'
 
-/** Extrae el id de un valor FK que puede venir como id plano u objeto anidado. */
 function refValue(v: unknown): string {
   if (v && typeof v === 'object' && 'id' in v) return String((v as { id: unknown }).id)
   return v == null ? '' : String(v)
@@ -11,14 +10,10 @@ function refValue(v: unknown): string {
 
 type FormState = Record<string, string>
 
-/** Construye el estado inicial del formulario a partir de la config y (opcional) el registro. */
 function buildInitial(fields: FieldConfig[], record: ApiRecord | null): FormState {
   const state: FormState = {}
   fields.forEach((f) => {
     if (record) {
-      // Campos write_only (password, o email en Científicos/Asistentes) no
-      // vienen en la respuesta con su propio nombre; sourceKey apunta a la
-      // versión legible (p. ej. 'user_email') para precargar el valor.
       const raw = record[f.sourceKey ?? f.name]
       state[f.name] = f.type === 'ref' ? refValue(raw) : raw == null ? '' : String(raw)
     } else {
@@ -69,14 +64,12 @@ export function ResourceForm({
     e.preventDefault()
     if (!validate()) return
 
-    // Construye el payload: omite vacíos opcionales; password vacío no se envía.
     const payload: Record<string, unknown> = {}
     resource.fields.forEach((f) => {
       const val = form[f.name]
       if (f.type === 'password' && (val === '' || val == null)) return
       const isOptionalField = f.optional || (!f.required && !f.requiredOnCreate)
       if (isOptionalField && (val === '' || val == null)) {
-        // Los FK opcionales vacíos se envían como null para poder desvincular.
         if (f.type === 'ref') {
           payload[f.name] = null
           return

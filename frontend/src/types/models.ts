@@ -1,11 +1,9 @@
-/** Roles de usuario, reflejan laboratory.User.ROLE_CHOICES en el backend. */
 export type Role = 'admin' | 'scientist' | 'assistant'
 
 export type UserStatus = 'active' | 'inactive' | 'suspended'
 export type Status = 'active' | 'inactive'
 export type SampleTestStatus = 'pending' | 'in_progress' | 'completed'
 
-/** Registro genérico devuelto por la API: siempre tiene id, el resto varía por recurso. */
 export interface ApiRecord {
   id: string
   [key: string]: unknown
@@ -26,7 +24,6 @@ export interface Scientist extends ApiRecord {
   specialty: string
   license_number: string
   phone: string | null
-  /** Email de la cuenta de acceso vinculada (read-only); null si no tiene una. */
   user_email: string | null
   status: Status
 }
@@ -38,7 +35,6 @@ export interface Assistant extends ApiRecord {
   laboratory_zone: string | null
   shift_hours: string | null
   phone: string | null
-  /** Email de la cuenta de acceso vinculada (read-only); null si no tiene una. */
   user_email: string | null
   status: Status
 }
@@ -85,7 +81,6 @@ export interface AssistantProject extends ApiRecord {
   status: Status
 }
 
-/** Forma paginada estándar de DRF (PageNumberPagination). */
 export interface Paginated<T> {
   count: number
   next: string | null
