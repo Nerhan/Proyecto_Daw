@@ -1,6 +1,5 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers as drf_serializers, status, viewsets
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from laboratory.models import (
     User, Scientist, Assistant, Project, Sample, Test, SampleTest, AssistantProject
 )
-from laboratory.permissions import IsAdminOrScientist, UserManagementPermission
+from laboratory.permissions import IsAdminOrReadOnly, IsAdminOrScientist, UserManagementPermission
 from laboratory.serializers import (
     UserSerializer, UserDetailSerializer,
     ScientistSerializer,
@@ -38,11 +37,15 @@ class AuditedModelViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(AuditedModelViewSet):
-    # No hay auto-registro público: dar de alta cuentas es una acción de
-    # gestión (ver UserManagementPermission). El primer admin del sistema se
-    # crea con `python manage.py create_admin` (comando de management).
+    # No se admite alta directa de cuentas (sin POST): las cuentas de
+    # scientist/assistant se crean junto con su perfil de Científico o
+    # Asistente (ver ScientistSerializer/AssistantSerializer, que
+    # gestionan el User internamente). El primer admin del sistema se crea
+    # con `python manage.py create_admin`. Esta vista queda solo para que
+    # el admin administre cuentas ya existentes.
     queryset = User.objects.all().order_by('-id')
     permission_classes = [UserManagementPermission]
+    http_method_names = ['get', 'put', 'patch', 'delete', 'head', 'options']
 
     def get_serializer_class(self):
         # Si es una consulta de listado o detalle (GET), devolvemos el JSON anidado complejo
@@ -50,23 +53,21 @@ class UserViewSet(AuditedModelViewSet):
             return UserDetailSerializer
         return UserSerializer
 
-    def create(self, request, *args, **kwargs):
-        # Un científico solo puede dar de alta cuentas de asistente; no
-        # puede crearse a sí mismo otro científico ni un admin.
-        if getattr(request.user, 'role', None) == 'scientist' and request.data.get('role') != 'assistant':
-            raise PermissionDenied('Un científico solo puede crear cuentas de asistente.')
-        return super().create(request, *args, **kwargs)
-
 
 class ScientistViewSet(AuditedModelViewSet):
+    # Dar de alta/editar un científico implica crear o modificar su cuenta
+    # de acceso (email/password), por eso queda reservado al admin, igual
+    # que la gestión de cuentas en general (ver IsAdminOrReadOnly).
     queryset = Scientist.objects.all().order_by('-id')
     serializer_class = ScientistSerializer
-    permission_classes = [IsAdminOrScientist]
+    permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ['specialty', 'status']
     search_fields = ['names', 'father_surname', 'license_number']
 
 
 class AssistantViewSet(AuditedModelViewSet):
+    # Admin y scientist pueden dar de alta asistentes (y su cuenta de
+    # acceso), igual que ya podían crear cuentas de assistant en /users/.
     queryset = Assistant.objects.all().order_by('-id')
     serializer_class = AssistantSerializer
     permission_classes = [IsAdminOrScientist]

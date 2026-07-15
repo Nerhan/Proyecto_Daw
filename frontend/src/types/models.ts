@@ -26,7 +26,8 @@ export interface Scientist extends ApiRecord {
   specialty: string
   license_number: string
   phone: string | null
-  user: string | null
+  /** Email de la cuenta de acceso vinculada (read-only); null si no tiene una. */
+  user_email: string | null
   status: Status
 }
 
@@ -37,7 +38,8 @@ export interface Assistant extends ApiRecord {
   laboratory_zone: string | null
   shift_hours: string | null
   phone: string | null
-  user: string | null
+  /** Email de la cuenta de acceso vinculada (read-only); null si no tiene una. */
+  user_email: string | null
   status: Status
 }
 

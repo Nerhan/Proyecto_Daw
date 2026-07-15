@@ -16,7 +16,10 @@ function buildInitial(fields: FieldConfig[], record: ApiRecord | null): FormStat
   const state: FormState = {}
   fields.forEach((f) => {
     if (record) {
-      const raw = record[f.name]
+      // Campos write_only (password, o email en Científicos/Asistentes) no
+      // vienen en la respuesta con su propio nombre; sourceKey apunta a la
+      // versión legible (p. ej. 'user_email') para precargar el valor.
+      const raw = record[f.sourceKey ?? f.name]
       state[f.name] = f.type === 'ref' ? refValue(raw) : raw == null ? '' : String(raw)
     } else {
       state[f.name] = f.default ?? ''

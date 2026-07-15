@@ -46,6 +46,10 @@ export interface FieldConfig {
   options?: SelectOption[] | ((actingRole: Role | undefined) => SelectOption[])
   ref?: string
   optionLabel?: (obj: ApiRecord) => string
+  /** Al editar, precarga el valor inicial desde este campo del registro en
+   * vez de `name` (útil para campos write_only cuya versión legible tiene
+   * otro nombre en la respuesta, p. ej. `email` se precarga desde `user_email`). */
+  sourceKey?: string
 }
 
 export interface ResourceConfig {
@@ -90,18 +94,6 @@ export const TEST_STATUS_OPTIONS: SelectOption[] = [
 const personName = (o: ApiRecord | undefined): string =>
   o ? `${o.names as string} ${(o.father_surname as string) || ''}`.trim() : ''
 
-/**
- * Opciones de rol al crear un Usuario: un admin puede asignar cualquier
- * rol; un científico solo puede dar de alta cuentas de asistente (el
- * backend impone la misma regla en UserViewSet.create, esto es solo UX).
- */
-function userRoleOptions(actingRole: Role | undefined): SelectOption[] {
-  if (actingRole === 'scientist') {
-    return ROLE_OPTIONS.filter((o) => o.value === 'assistant')
-  }
-  return ROLE_OPTIONS
-}
-
 export const RESOURCES: ResourceConfig[] = [
   {
     key: 'users',
@@ -110,11 +102,12 @@ export const RESOURCES: ResourceConfig[] = [
     singular: 'Usuario',
     icon: 'users',
     group: 'Administración',
-    // No hay auto-registro público: dar de alta cuentas es gestión de
-    // admin/scientist. El científico solo puede crear (no editar/borrar), y
-    // el backend fuerza que el rol creado sea 'assistant'.
-    view: ['admin', 'scientist'],
-    create: ['admin', 'scientist'],
+    // Ya no se crean cuentas sueltas aquí: se dan de alta automáticamente
+    // al crear un Científico o un Asistente (ver esos recursos abajo). Esta
+    // sección queda solo para que el admin administre cuentas existentes
+    // (activar/suspender, cambiar email o contraseña, eliminar).
+    view: ['admin'],
+    create: [],
     update: ['admin'],
     del: ['admin'],
     search: false,
@@ -126,8 +119,8 @@ export const RESOURCES: ResourceConfig[] = [
     ],
     fields: [
       { name: 'email', label: 'Email institucional', type: 'email', required: true, hint: 'Debe terminar en @unsa.edu.pe' },
-      { name: 'password', label: 'Contraseña', type: 'password', requiredOnCreate: true, hint: 'Solo se envía si se completa' },
-      { name: 'role', label: 'Rol', type: 'select', options: userRoleOptions, required: true, default: 'assistant' },
+      { name: 'password', label: 'Contraseña', type: 'password', optional: true, hint: 'Dejar vacío para no cambiarla' },
+      { name: 'role', label: 'Rol', type: 'select', options: ROLE_OPTIONS, required: true },
       { name: 'status', label: 'Estado', type: 'select', options: USER_STATUS_OPTIONS, default: 'active' },
     ],
   },
@@ -138,16 +131,20 @@ export const RESOURCES: ResourceConfig[] = [
     singular: 'Científico',
     icon: 'scientist',
     group: 'Personal',
+    // Crear un científico da de alta su cuenta de acceso (email+password),
+    // igual que antes solo se podía crear una cuenta role=scientist desde
+    // admin: por eso la gestión completa queda reservada al admin.
     view: ['admin', 'scientist', 'assistant'],
-    create: ['admin', 'scientist'],
-    update: ['admin', 'scientist'],
-    del: ['admin', 'scientist'],
+    create: ['admin'],
+    update: ['admin'],
+    del: ['admin'],
     search: true,
     columns: [
       { key: 'names', label: 'Nombres' },
       { key: 'father_surname', label: 'Apellido' },
       { key: 'specialty', label: 'Especialidad' },
       { key: 'license_number', label: 'Licencia', type: 'mono' },
+      { key: 'user_email', label: 'Cuenta de acceso', type: 'mono' },
       { key: 'status', label: 'Estado', type: 'status' },
     ],
     fields: [
@@ -157,7 +154,8 @@ export const RESOURCES: ResourceConfig[] = [
       { name: 'specialty', label: 'Especialidad', type: 'text', required: true },
       { name: 'license_number', label: 'N.º de licencia', type: 'text', required: true, hint: 'Mínimo 5 caracteres' },
       { name: 'phone', label: 'Teléfono', type: 'text' },
-      { name: 'user', label: 'Usuario vinculado', type: 'ref', ref: 'users', optionLabel: (o) => o.email as string, optional: true },
+      { name: 'email', label: 'Email institucional (cuenta de acceso)', type: 'email', requiredOnCreate: true, sourceKey: 'user_email', hint: 'Con este email y contraseña el científico inicia sesión' },
+      { name: 'password', label: 'Contraseña', type: 'password', requiredOnCreate: true, hint: 'Al editar, dejar vacío para no cambiarla' },
       { name: 'status', label: 'Estado', type: 'select', options: STATUS_OPTIONS, default: 'active' },
     ],
   },
@@ -168,6 +166,8 @@ export const RESOURCES: ResourceConfig[] = [
     singular: 'Asistente',
     icon: 'assistant',
     group: 'Personal',
+    // Crear un asistente da de alta su cuenta de acceso; admin y científico
+    // pueden hacerlo (igual que ya podían crear cuentas role=assistant).
     view: ['admin', 'scientist', 'assistant'],
     create: ['admin', 'scientist'],
     update: ['admin', 'scientist'],
@@ -178,6 +178,7 @@ export const RESOURCES: ResourceConfig[] = [
       { key: 'father_surname', label: 'Apellido' },
       { key: 'laboratory_zone', label: 'Zona' },
       { key: 'shift_hours', label: 'Turno' },
+      { key: 'user_email', label: 'Cuenta de acceso', type: 'mono' },
       { key: 'status', label: 'Estado', type: 'status' },
     ],
     fields: [
@@ -187,7 +188,8 @@ export const RESOURCES: ResourceConfig[] = [
       { name: 'laboratory_zone', label: 'Zona de laboratorio', type: 'text' },
       { name: 'shift_hours', label: 'Turno', type: 'text', hint: 'Ej: Mañana, Tarde, Noche (mín. 4 caracteres)' },
       { name: 'phone', label: 'Teléfono', type: 'text' },
-      { name: 'user', label: 'Usuario vinculado', type: 'ref', ref: 'users', optionLabel: (o) => o.email as string, optional: true },
+      { name: 'email', label: 'Email institucional (cuenta de acceso)', type: 'email', requiredOnCreate: true, sourceKey: 'user_email', hint: 'Con este email y contraseña el asistente inicia sesión' },
+      { name: 'password', label: 'Contraseña', type: 'password', requiredOnCreate: true, hint: 'Al editar, dejar vacío para no cambiarla' },
       { name: 'status', label: 'Estado', type: 'select', options: STATUS_OPTIONS, default: 'active' },
     ],
   },
