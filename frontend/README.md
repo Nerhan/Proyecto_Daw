@@ -38,7 +38,10 @@ npm run preview       # sirve el build localmente
 
 ## Primer uso
 
-No existe auto-registro público: dar de alta cuentas es una acción de gestión.
+**No se crean cuentas sueltas en la pestaña "Usuarios".** Las cuentas de acceso
+se dan de alta como parte del formulario de **Científicos** o **Asistentes**:
+al crear uno de esos perfiles, pides también su email y contraseña, y el
+backend crea el perfil *y* la cuenta en una sola operación.
 
 1. Levanta el backend y crea el primer admin:
    ```bash
@@ -49,31 +52,35 @@ No existe auto-registro público: dar de alta cuentas es una acción de gestión
    ```
 2. Levanta el frontend: `cd frontend && npm run dev`.
 3. Abre `http://localhost:5173` e inicia sesión con la cuenta admin creada.
-4. Desde el panel de **Usuarios**, ese admin puede dar de alta cuentas de
-   científico o asistente. Un científico logueado también puede dar de alta
-   asistentes (pero no otros científicos ni admins).
+4. Ese admin da de alta científicos desde **Científicos → Nuevo científico**
+   (nombre, especialidad... + email + contraseña de su cuenta). Un científico
+   logueado hace lo mismo pero desde **Asistentes → Nuevo asistente** (no
+   puede crear otros científicos ni admins).
+5. La pestaña **Usuarios** queda solo para que el admin administre cuentas
+   ya existentes (activar/suspender, cambiar email o contraseña, eliminar);
+   no tiene botón de "crear".
 
 ## Roles y permisos (reflejan los del backend)
 
 | Sección | Admin | Científico | Asistente |
 |---|:---:|:---:|:---:|
-| Usuarios | Ver + crear (cualquier rol) + editar + borrar | Ver + crear (solo asistente) | Sin acceso |
-| Científicos | CRUD | CRUD | Solo lectura |
-| Asistentes | CRUD | CRUD | Solo lectura |
+| Usuarios (solo gestión, sin alta) | Ver + editar + borrar | Sin acceso | Sin acceso |
+| Científicos (crea perfil + cuenta) | CRUD | Solo lectura | Solo lectura |
+| Asistentes (crea perfil + cuenta) | CRUD | CRUD | Solo lectura |
 | Proyectos | CRUD | CRUD | Solo lectura |
 | Protocolos (tests) | CRUD | CRUD | Solo lectura |
 | Asignaciones | CRUD | CRUD | Solo lectura |
 | Muestras | CRUD | CRUD | CRUD |
 | Resultados de pruebas | CRUD | CRUD | CRUD |
 
-Los permisos de creación/edición/borrado son independientes entre sí (por
-ejemplo, un científico puede *crear* usuarios pero no *editarlos* ni
-*borrarlos*): ver `create` / `update` / `del` en cada recurso de
-[src/config/resources.ts](src/config/resources.ts). Al crear un usuario, el
-selector de rol se restringe automáticamente a "Asistente" si quien está
-logueado es un científico. Los ítems de solo lectura aparecen en el menú con
-un candado. Aunque se intentara forzar una escritura, el backend la rechaza
-con 403.
+Los permisos de creación/edición/borrado son independientes entre sí: ver
+`create` / `update` / `del` en cada recurso de
+[src/config/resources.ts](src/config/resources.ts). Los campos `email` y
+`password` de los formularios de Científico/Asistente son obligatorios al
+crear y opcionales al editar (dejarlos vacíos significa "no cambiar"); en la
+tabla, la columna "Cuenta de acceso" muestra el email vinculado. Los ítems de
+solo lectura aparecen en el menú con un candado. Aunque se intentara forzar
+una escritura, el backend la rechaza con 403.
 
 ## Arquitectura
 

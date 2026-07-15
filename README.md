@@ -55,21 +55,25 @@ Se leen desde `BioMatrix_Labs/.env` (no se commitea; ver `.env.example`).
 
 El login no usa el `TokenObtainPairView` por defecto de `simplejwt` porque este proyecto tiene su propio modelo de usuario de dominio (`laboratory.User`, con `role` y `password_hash`), separado del `User` interno de Django.
 
-**No existe auto-registro público.** Dar de alta una cuenta es una acción de gestión:
+**No existe auto-registro ni alta directa de cuentas.** `POST /api/users/` está deshabilitado (405) para todos, incluido admin. Las cuentas se crean como efecto secundario de crear un perfil:
 
-1. **Bootstrap del primer admin:** `python manage.py create_admin` (comando de management, se corre desde el servidor/terminal, no vía HTTP).
-2. **Alta de nuevas cuentas:** `POST /api/users/` con `email`, `password`, `role`, autenticado como `admin` o `scientist` (ver reglas de rol abajo).
-3. **Login:** `POST /api/token/` con `email` y `password` → devuelve `access`, `refresh` y `role`.
-4. **Refresh:** `POST /api/token/refresh/` con `refresh` → devuelve un nuevo `access`.
-5. Usar el token en cada request: header `Authorization: Bearer <access_token>`.
+1. **Bootstrap del primer admin:** `python manage.py create_admin` (comando de management, se corre desde el servidor/terminal, no vía HTTP). Es la única forma de crear una cuenta `role=admin`.
+2. **Alta de un científico:** `POST /api/scientists/` (solo `admin`) con los datos del perfil **más** `email` y `password` → crea el perfil *y* su cuenta `role=scientist` en la misma operación transaccional.
+3. **Alta de un asistente:** `POST /api/assistants/` (`admin` o `scientist`) con los datos del perfil **más** `email` y `password` → crea el perfil *y* su cuenta `role=assistant`.
+4. **Login:** `POST /api/token/` con `email` y `password` → devuelve `access`, `refresh` y `role`.
+5. **Refresh:** `POST /api/token/refresh/` con `refresh` → devuelve un nuevo `access`.
+6. Usar el token en cada request: header `Authorization: Bearer <access_token>`.
+
+`/api/users/` sigue existiendo, pero solo para que `admin` administre cuentas ya creadas (listar, activar/suspender, cambiar email o contraseña, eliminar) — ver `laboratory/serializers/account_mixin.py` para la lógica de alta/actualización transaccional del `User` vinculado.
 
 ## Permisos por rol
 
 `laboratory.User.role` puede ser `admin`, `scientist` o `assistant`.
 
-- **Gestión de cuentas** (`/api/users/`): `admin` tiene control total (crear con cualquier rol, editar, borrar). `scientist` puede listar y crear cuentas, pero solo con `role=assistant` (el backend lo valida y rechaza cualquier otro rol con 403); no puede editar ni borrar usuarios. `assistant` no tiene acceso a este recurso.
-- **Lectura** (`GET`) del resto de recursos: cualquier usuario autenticado.
-- **Escritura en personal, proyectos y catálogo de tests** (`Scientist`, `Assistant`, `Project`, `Test`, `AssistantProject`): solo `admin` o `scientist`.
+- **Gestión de cuentas** (`/api/users/`): reservada por completo a `admin` (leer/editar/borrar); `scientist` y `assistant` no tienen acceso. Nadie puede crear (`POST`) directamente aquí.
+- **Científicos** (`/api/scientists/`): crear/editar/borrar reservado a `admin` (implica gestionar la cuenta de acceso del científico); lectura para cualquier autenticado.
+- **Asistentes** (`/api/assistants/`): crear/editar/borrar para `admin` o `scientist` (implica gestionar la cuenta de acceso del asistente); lectura para cualquier autenticado.
+- **Escritura en proyectos y catálogo de tests** (`Project`, `Test`, `AssistantProject`): solo `admin` o `scientist`.
 - **Escritura en trabajo de banco** (`Sample`, `SampleTest`): cualquier usuario autenticado, incluido `assistant`, ya que registrar muestras y resultados es su trabajo diario.
 
 ## Endpoints principales
