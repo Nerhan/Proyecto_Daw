@@ -3,7 +3,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from laboratory.models import Assistant, Project, Scientist, User
+from laboratory.models import Assistant, Project, Sample, SampleTest, Scientist, Test, User
 from laboratory.validators import (
     validate_license_length,
     validate_positive_budget,
@@ -142,6 +142,11 @@ class RolePermissionTests(APITestCase):
         project = Project.objects.get(id=response.data['id'])
         self.assertEqual(project.created_id_id, self.admin_user.id)
         self.assertEqual(project.modified_id_id, self.admin_user.id)
+
+        detail = self.client.get(f'/api/projects/{project.id}/')
+        self.assertEqual(detail.status_code, status.HTTP_200_OK)
+        self.assertEqual(detail.data['created_by'], 'admin@unsa.edu.pe')
+        self.assertEqual(detail.data['modified_by'], 'admin@unsa.edu.pe')
 
     def test_assistant_can_read_projects(self):
         Project.objects.create(project_name='Proyecto Z', scientists=self.scientist_profile)
@@ -320,3 +325,90 @@ class AssistantAccountCreationTests(APITestCase):
         self._auth_client('asistente@unsa.edu.pe')
         response = self.client.post('/api/assistants/', self._payload())
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class SampleTestStatusTests(APITestCase):
+    def setUp(self):
+        self.admin = User(email='admin@unsa.edu.pe', role='admin')
+        self.admin.set_password('claveSegura123')
+        self.admin.save()
+        response = self.client.post('/api/token/', {'email': 'admin@unsa.edu.pe', 'password': 'claveSegura123'})
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {response.data['access']}")
+
+        scientist = Scientist.objects.create(
+            names='Ana', father_surname='Perez', mother_surname='Lopez',
+            specialty='Genetica', license_number='LIC-55001',
+        )
+        project = Project.objects.create(project_name='Proyecto ST', scientists=scientist)
+        sample = Sample.objects.create(sample_type='sangre', projects=project)
+        test = Test.objects.create(test_name='PCR', protocol_description='Protocolo PCR')
+        self.sample_test = SampleTest.objects.create(samples=sample, tests=test)
+
+    def test_patch_to_valid_enum_status_succeeds(self):
+        for value in ('completed', 'rejected', 'pending'):
+            response = self.client.patch(f'/api/sample-tests/{self.sample_test.id}/', {'status': value})
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data['status'], value)
+
+    def test_patch_to_invalid_status_returns_400_not_500(self):
+        response = self.client.patch(f'/api/sample-tests/{self.sample_test.id}/', {'status': 'in_progress'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('status', response.data)
+
+    def test_list_with_invalid_status_filter_returns_400_not_500(self):
+        response = self.client.get('/api/sample-tests/', {'status': 'active'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_list_with_valid_status_filter_works(self):
+        response = self.client.get('/api/sample-tests/', {'status': 'pending'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+
+
+class MeEndpointTests(APITestCase):
+    def setUp(self):
+        self.user = User(email='yo@unsa.edu.pe', role='scientist')
+        self.user.set_password('claveSegura123')
+        self.user.save()
+
+    def _auth(self):
+        response = self.client.post('/api/token/', {'email': 'yo@unsa.edu.pe', 'password': 'claveSegura123'})
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {response.data['access']}")
+
+    def test_me_requires_authentication(self):
+        response = self.client.get('/api/me/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_me_returns_current_user(self):
+        self._auth()
+        response = self.client.get('/api/me/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], 'yo@unsa.edu.pe')
+        self.assertEqual(response.data['role'], 'scientist')
+
+    def test_change_password_rejects_wrong_current_password(self):
+        self._auth()
+        response = self.client.post('/api/me/change-password/', {
+            'current_password': 'incorrecta',
+            'new_password': 'nuevaClave123',
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_change_password_rejects_short_new_password(self):
+        self._auth()
+        response = self.client.post('/api/me/change-password/', {
+            'current_password': 'claveSegura123',
+            'new_password': 'corta',
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_change_password_updates_credentials(self):
+        self._auth()
+        response = self.client.post('/api/me/change-password/', {
+            'current_password': 'claveSegura123',
+            'new_password': 'nuevaClave123',
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        login = self.client.post('/api/token/', {'email': 'yo@unsa.edu.pe', 'password': 'nuevaClave123'})
+        self.assertEqual(login.status_code, status.HTTP_200_OK)

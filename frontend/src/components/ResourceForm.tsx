@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { resolveOptions, type FieldConfig, type ResourceConfig } from '../config/resources'
 import type { ReferenceMap } from '../hooks/useReferenceData'
 import type { ApiRecord, Role } from '../types/models'
+import { PasswordStrength } from './PasswordStrength'
 
 function refValue(v: unknown): string {
   if (v && typeof v === 'object' && 'id' in v) return String((v as { id: unknown }).id)
@@ -84,12 +85,13 @@ export function ResourceForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      {resource.fields.map((f) => {
+      {resource.fields.map((f, idx) => {
         const err = errors[f.name]
         const inputId = `f_${f.name}`
         const commonProps = {
           id: inputId,
           value: form[f.name] ?? '',
+          autoFocus: idx === 0,
         }
         return (
           <div className="field" key={f.name}>
@@ -143,6 +145,7 @@ export function ResourceForm({
               />
             )}
 
+            {f.type === 'password' && <PasswordStrength value={form[f.name] ?? ''} />}
             {err && <span className="field-error">{err}</span>}
             {!err && f.hint && (
               <span className="field-error" style={{ color: 'var(--text-faint)' }}>

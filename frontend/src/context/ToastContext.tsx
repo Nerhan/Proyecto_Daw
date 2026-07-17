@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import { Icon } from '../components/Icon'
 
 type ToastKind = 'ok' | 'err' | 'info'
@@ -34,16 +34,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [remove]
   )
 
-  const toast: ToastApi = {
-    success: (m) => push(m, 'ok'),
-    error: (m) => push(m, 'err'),
-    info: (m) => push(m, 'info'),
-  }
+  const toast = useMemo<ToastApi>(
+    () => ({
+      success: (m) => push(m, 'ok'),
+      error: (m) => push(m, 'err'),
+      info: (m) => push(m, 'info'),
+    }),
+    [push]
+  )
 
   return (
     <ToastContext.Provider value={toast}>
       {children}
-      <div className="toast-stack">
+      <div className="toast-stack" role="status" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={`toast ${t.kind}`} onClick={() => remove(t.id)}>
             <Icon name={t.kind === 'ok' ? 'check' : t.kind === 'err' ? 'alert' : 'info'} />

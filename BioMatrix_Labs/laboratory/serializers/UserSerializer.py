@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from laboratory.models.User import User
+from laboratory.serializers.audit import AuditFieldsMixin
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, style={'input_type': 'password'})
@@ -30,12 +31,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 # SERIALIZADOR ANIDADO COMPLEJO (Nested JSON)
 # Muestra el usuario junto con los detalles de su perfil asociado
-class UserDetailSerializer(serializers.ModelSerializer):
+class UserDetailSerializer(AuditFieldsMixin, serializers.ModelSerializer):
     profile_details = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'role', 'status', 'created', 'modified', 'profile_details']
+        fields = ['id', 'email', 'role', 'status', 'created', 'modified', 'profile_details', 'created_by', 'modified_by']
 
     @extend_schema_field(serializers.DictField(allow_null=True))
     def get_profile_details(self, obj):

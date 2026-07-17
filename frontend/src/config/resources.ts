@@ -7,7 +7,7 @@ export interface SelectOption {
 }
 
 export type FieldType = 'text' | 'email' | 'password' | 'textarea' | 'number' | 'select' | 'ref'
-export type ColumnType = 'status' | 'role' | 'date' | 'money' | 'mono' | 'ref' | undefined
+export type ColumnType = 'status' | 'role' | 'date' | 'money' | 'mono' | 'ref' | 'temp' | undefined
 
 export interface ColumnConfig {
   key: string
@@ -15,6 +15,17 @@ export interface ColumnConfig {
   type?: ColumnType
   ref?: string
   optionLabel?: (obj: ApiRecord) => string
+  sortable?: boolean
+}
+
+export interface FilterConfig {
+  name: string
+  label: string
+  allLabel: string
+  options?: SelectOption[]
+  ref?: string
+  optionLabel?: (obj: ApiRecord) => string
+  default?: string
 }
 
 export interface FieldConfig {
@@ -47,6 +58,9 @@ export interface ResourceConfig {
   search: boolean
   columns: ColumnConfig[]
   fields: FieldConfig[]
+  filters?: FilterConfig[]
+  detail?: boolean
+  kanban?: boolean
 }
 
 export const STATUS_OPTIONS: SelectOption[] = [
@@ -68,8 +82,8 @@ export const ROLE_OPTIONS: SelectOption[] = [
 
 export const TEST_STATUS_OPTIONS: SelectOption[] = [
   { value: 'pending', label: 'Pendiente' },
-  { value: 'in_progress', label: 'En proceso' },
   { value: 'completed', label: 'Completado' },
+  { value: 'rejected', label: 'Rechazado' },
 ]
 
 const personName = (o: ApiRecord | undefined): string =>
@@ -88,6 +102,10 @@ export const RESOURCES: ResourceConfig[] = [
     update: ['admin'],
     del: ['admin'],
     search: false,
+    filters: [
+      { name: 'role', label: 'Rol', allLabel: 'Todos los roles', options: ROLE_OPTIONS },
+      { name: 'status', label: 'Estado', allLabel: 'Todos los estados', options: USER_STATUS_OPTIONS },
+    ],
     columns: [
       { key: 'email', label: 'Email' },
       { key: 'role', label: 'Rol', type: 'role' },
@@ -113,12 +131,15 @@ export const RESOURCES: ResourceConfig[] = [
     update: ['admin'],
     del: ['admin'],
     search: true,
+    filters: [
+      { name: 'status', label: 'Estado', allLabel: 'Todos los estados', options: STATUS_OPTIONS, default: 'active' },
+    ],
     columns: [
       { key: 'names', label: 'Nombres' },
       { key: 'father_surname', label: 'Apellido' },
       { key: 'specialty', label: 'Especialidad' },
       { key: 'license_number', label: 'Licencia', type: 'mono' },
-      { key: 'user_email', label: 'Cuenta de acceso', type: 'mono' },
+      { key: 'user_email', label: 'Cuenta de acceso', type: 'mono', sortable: false },
       { key: 'status', label: 'Estado', type: 'status' },
     ],
     fields: [
@@ -145,12 +166,15 @@ export const RESOURCES: ResourceConfig[] = [
     update: ['admin', 'scientist'],
     del: ['admin', 'scientist'],
     search: true,
+    filters: [
+      { name: 'status', label: 'Estado', allLabel: 'Todos los estados', options: STATUS_OPTIONS, default: 'active' },
+    ],
     columns: [
       { key: 'names', label: 'Nombres' },
       { key: 'father_surname', label: 'Apellido' },
       { key: 'laboratory_zone', label: 'Zona' },
       { key: 'shift_hours', label: 'Turno' },
-      { key: 'user_email', label: 'Cuenta de acceso', type: 'mono' },
+      { key: 'user_email', label: 'Cuenta de acceso', type: 'mono', sortable: false },
       { key: 'status', label: 'Estado', type: 'status' },
     ],
     fields: [
@@ -177,6 +201,11 @@ export const RESOURCES: ResourceConfig[] = [
     update: ['admin', 'scientist'],
     del: ['admin', 'scientist'],
     search: true,
+    detail: true,
+    filters: [
+      { name: 'status', label: 'Estado', allLabel: 'Todos los estados', options: STATUS_OPTIONS, default: 'active' },
+      { name: 'scientists', label: 'Investigador', allLabel: 'Todos los investigadores', ref: 'scientists', optionLabel: personName },
+    ],
     columns: [
       { key: 'project_name', label: 'Proyecto' },
       { key: 'scientists', label: 'Investigador principal', type: 'ref', ref: 'scientists', optionLabel: personName },
@@ -205,10 +234,14 @@ export const RESOURCES: ResourceConfig[] = [
     update: ['admin', 'scientist', 'assistant'],
     del: ['admin', 'scientist', 'assistant'],
     search: true,
+    filters: [
+      { name: 'status', label: 'Estado', allLabel: 'Todos los estados', options: STATUS_OPTIONS, default: 'active' },
+      { name: 'projects', label: 'Proyecto', allLabel: 'Todos los proyectos', ref: 'projects', optionLabel: (o) => o.project_name as string },
+    ],
     columns: [
       { key: 'sample_type', label: 'Tipo de muestra' },
       { key: 'projects', label: 'Proyecto', type: 'ref', ref: 'projects', optionLabel: (o) => o.project_name as string },
-      { key: 'storage_temperature', label: 'Temp. (°C)', type: 'mono' },
+      { key: 'storage_temperature', label: 'Temp. (°C)', type: 'temp' },
       { key: 'collection_date', label: 'Recolección', type: 'date' },
       { key: 'status', label: 'Estado', type: 'status' },
     ],
@@ -232,6 +265,9 @@ export const RESOURCES: ResourceConfig[] = [
     update: ['admin', 'scientist'],
     del: ['admin', 'scientist'],
     search: true,
+    filters: [
+      { name: 'status', label: 'Estado', allLabel: 'Todos los estados', options: STATUS_OPTIONS, default: 'active' },
+    ],
     columns: [
       { key: 'test_name', label: 'Protocolo' },
       { key: 'estimated_duration', label: 'Duración (min)', type: 'mono' },
@@ -256,6 +292,11 @@ export const RESOURCES: ResourceConfig[] = [
     update: ['admin', 'scientist', 'assistant'],
     del: ['admin', 'scientist', 'assistant'],
     search: true,
+    kanban: true,
+    filters: [
+      { name: 'status', label: 'Estado', allLabel: 'Todos los estados', options: TEST_STATUS_OPTIONS },
+      { name: 'tests', label: 'Protocolo', allLabel: 'Todos los protocolos', ref: 'tests', optionLabel: (o) => o.test_name as string },
+    ],
     columns: [
       { key: 'samples', label: 'Muestra', type: 'ref', ref: 'samples', optionLabel: (o) => o.sample_type as string },
       { key: 'tests', label: 'Protocolo', type: 'ref', ref: 'tests', optionLabel: (o) => o.test_name as string },
@@ -284,6 +325,10 @@ export const RESOURCES: ResourceConfig[] = [
     update: ['admin', 'scientist'],
     del: ['admin', 'scientist'],
     search: false,
+    filters: [
+      { name: 'status', label: 'Estado', allLabel: 'Todos los estados', options: STATUS_OPTIONS, default: 'active' },
+      { name: 'projects', label: 'Proyecto', allLabel: 'Todos los proyectos', ref: 'projects', optionLabel: (o) => o.project_name as string },
+    ],
     columns: [
       { key: 'assistants', label: 'Asistente', type: 'ref', ref: 'assistants', optionLabel: personName },
       { key: 'projects', label: 'Proyecto', type: 'ref', ref: 'projects', optionLabel: (o) => o.project_name as string },

@@ -166,6 +166,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'laboratory.pagination.DefaultPagination',
     'PAGE_SIZE': 20,
+    'EXCEPTION_HANDLER': 'laboratory.exceptions.exception_handler',
 }
 
 SPECTACULAR_SETTINGS = {

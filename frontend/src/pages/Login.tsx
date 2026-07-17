@@ -54,7 +54,7 @@ export default function Login() {
 
       <div className="auth-card card">
         <div className="auth-brand">
-          <img src="/vite.svg" className="brand-logo" alt="" />
+          <img src="/logo.svg" className="brand-logo" alt="BioMatrix Labs" />
           <div className="auth-title">BioMatrix Labs</div>
           <div className="eyebrow">Sistema de gestión de laboratorio</div>
         </div>

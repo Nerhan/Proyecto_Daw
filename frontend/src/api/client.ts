@@ -82,9 +82,16 @@ export function apiErrorMessage(error: unknown, fallback = 'Ocurrió un error in
   if (!axios.isAxiosError(error)) {
     return error instanceof Error ? error.message : fallback
   }
+  const status = error.response?.status
   const data = error.response?.data as unknown
   if (!data) return error.message || fallback
-  if (typeof data === 'string') return data
+  if (typeof data === 'string') {
+    const looksLikeHtml = data.trimStart().startsWith('<')
+    if (looksLikeHtml || data.length > 300) {
+      return status && status >= 500 ? `Error del servidor (${status}). Revisa la consola del backend.` : fallback
+    }
+    return data
+  }
   if (typeof data === 'object' && data !== null) {
     const obj = data as Record<string, unknown>
     if (typeof obj.detail === 'string') return obj.detail
@@ -93,7 +100,7 @@ export function apiErrorMessage(error: unknown, fallback = 'Ocurrió un error in
       const text = Array.isArray(val) ? val.join(' ') : String(val)
       parts.push(key === 'non_field_errors' ? text : `${key}: ${text}`)
     }
-    if (parts.length) return parts.join(' · ')
+    if (parts.length) return parts.join(' · ').slice(0, 300)
   }
   return fallback
 }

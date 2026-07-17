@@ -2,7 +2,7 @@ export type Role = 'admin' | 'scientist' | 'assistant'
 
 export type UserStatus = 'active' | 'inactive' | 'suspended'
 export type Status = 'active' | 'inactive'
-export type SampleTestStatus = 'pending' | 'in_progress' | 'completed'
+export type SampleTestStatus = 'pending' | 'completed' | 'rejected'
 
 export interface ApiRecord {
   id: string

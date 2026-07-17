@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
-import { resourcesForRole, RESOURCE_BY_KEY, type ResourceConfig } from '../config/resources'
+import { resourcesForRole, canCreate, RESOURCE_BY_KEY, type ResourceConfig } from '../config/resources'
+import { CommandPalette, type PaletteItem } from './CommandPalette'
 import { Icon } from './Icon'
 import type { Role } from '../types/models'
 
@@ -29,23 +30,71 @@ export default function Layout() {
   const { session, role, logout } = useAuth()
   const { theme, toggle } = useTheme()
   const location = useLocation()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const [palette, setPalette] = useState(false)
 
   const resources = resourcesForRole(role)
   const grouped = groupBy<ResourceConfig>(resources, (r) => r.group)
   const initials = (session?.email || '?').slice(0, 2).toUpperCase()
 
+  const path = location.pathname
   const currentTitle =
-    location.pathname === '/'
+    path === '/'
       ? 'Panel de control'
-      : RESOURCE_BY_KEY[location.pathname.split('/')[2]]?.label || 'BioMatrix Labs'
+      : path === '/profile'
+        ? 'Mi perfil'
+        : path.startsWith('/projects/')
+          ? 'Detalle de proyecto'
+          : RESOURCE_BY_KEY[path.split('/')[2]]?.label || 'BioMatrix Labs'
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPalette((p) => !p)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const paletteItems = useMemo<PaletteItem[]>(
+    () => [
+      { id: 'dash', label: 'Panel de control', hint: 'Ir a', icon: 'dashboard', run: () => navigate('/') },
+      ...resources.map(
+        (r): PaletteItem => ({ id: r.key, label: r.label, hint: 'Ir a', icon: r.icon, run: () => navigate(`/r/${r.key}`) })
+      ),
+      { id: 'profile', label: 'Mi perfil', hint: 'Ir a', icon: 'assistant', run: () => navigate('/profile') },
+      ...resources
+        .filter((r) => canCreate(r, role))
+        .map(
+          (r): PaletteItem => ({
+            id: `new-${r.key}`,
+            label: `Nuevo ${r.singular.toLowerCase()}`,
+            hint: 'Crear',
+            icon: 'plus',
+            run: () => navigate(`/r/${r.key}?new=1`),
+          })
+        ),
+      {
+        id: 'theme',
+        label: theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro',
+        hint: 'Acción',
+        icon: theme === 'dark' ? 'sun' : 'moon',
+        run: toggle,
+      },
+      { id: 'logout', label: 'Cerrar sesión', hint: 'Acción', icon: 'logout', run: logout },
+    ],
+    [resources, role, theme, navigate, toggle, logout]
+  )
 
   return (
     <div className="app-shell">
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <aside className={`sidebar ${open ? 'open' : ''}`}>
         <div className="brand">
-          <img src="/vite.svg" className="brand-logo" alt="" />
+          <img src="/logo.svg" className="brand-logo" alt="BioMatrix Labs" />
           <div>
             <div className="brand-name">BioMatrix</div>
             <div className="brand-sub">Labs</div>
@@ -76,15 +125,17 @@ export default function Layout() {
 
         <div className="sidebar-foot">
           <div className="user-chip">
-            <div className="avatar">{initials}</div>
-            <div className="user-meta">
-              <div className="user-email">{session?.email}</div>
-              {role && (
-                <span className={`badge ${ROLE_BADGE[role]}`} style={{ marginTop: 4 }}>
-                  {ROLE_LABEL[role]}
-                </span>
-              )}
-            </div>
+            <Link to="/profile" className="user-chip-link" title="Ver mi perfil" onClick={() => setOpen(false)}>
+              <div className="avatar">{initials}</div>
+              <div className="user-meta">
+                <div className="user-email">{session?.email}</div>
+                {role && (
+                  <span className={`badge ${ROLE_BADGE[role]}`} style={{ marginTop: 4 }}>
+                    {ROLE_LABEL[role]}
+                  </span>
+                )}
+              </div>
+            </Link>
             <button className="btn-icon btn-ghost" onClick={logout} title="Cerrar sesión">
               <Icon name="logout" size={17} />
             </button>
@@ -99,6 +150,11 @@ export default function Layout() {
           </button>
           <h1>{currentTitle}</h1>
           <div className="topbar-spacer" />
+          <button className="palette-btn" onClick={() => setPalette(true)} title="Paleta de comandos">
+            <Icon name="search" size={15} />
+            <span>Buscar…</span>
+            <span className="kbd">Ctrl K</span>
+          </button>
           <button
             className="theme-toggle"
             onClick={toggle}
@@ -113,6 +169,8 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      <CommandPalette open={palette} onClose={() => setPalette(false)} items={paletteItems} />
     </div>
   )
 }

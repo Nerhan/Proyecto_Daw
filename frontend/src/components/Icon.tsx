@@ -31,6 +31,10 @@ const PATHS = {
   flask: 'M9 3h6M10 3v6L5.5 18a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 9V3',
   activity: 'M22 12h-4l-3 9L9 3l-3 9H2',
   shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+  download: 'M12 4v11M6 10l6 6 6-6M4 20h16',
+  eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  arrowUp: 'M12 19V5M5 12l7-7 7 7',
+  board: 'M4 4h5v16H4zM10 4h5v12h-5zM16 4h5v8h-5z',
 } as const
 
 export type IconName = keyof typeof PATHS

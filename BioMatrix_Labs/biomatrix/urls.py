@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 from laboratory.views import (
     UserViewSet, ScientistViewSet, AssistantViewSet, ProjectViewSet,
     SampleViewSet, TestViewSet, SampleTestViewSet, AssistantProjectViewSet,
-    LoginView
+    LoginView, MeView, ChangePasswordView
 )
 # IMPORTAR ESTO PARA LA DOCUMENTACIÓN:
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
@@ -36,4 +36,6 @@ urlpatterns = [
     
     path('api/token/', LoginView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/me/', MeView.as_view(), name='me'),
+    path('api/me/change-password/', ChangePasswordView.as_view(), name='change_password'),
 ]
