@@ -1,4 +1,6 @@
 import django_filters
+from django.conf import settings
+from django.shortcuts import render
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers as drf_serializers, status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -199,3 +201,8 @@ class ChangePasswordView(APIView):
         user.set_password(serializer.validated_data['new_password'])
         user.save()
         return Response({'detail': 'Contraseña actualizada correctamente.'})
+
+
+def welcome(request):
+    """Página de bienvenida del backend con el tema visual del frontend."""
+    return render(request, 'laboratory/welcome.html', {'frontend_url': settings.FRONTEND_URL.rstrip('/')})

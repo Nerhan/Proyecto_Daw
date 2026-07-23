@@ -1,0 +1,186 @@
+{% load static %}<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BioMatrix Labs — API</title>
+<style>
+  :root {
+    --blue: #29b6ff;
+    --blue-deep: #0a84ff;
+    --green: #00e6a0;
+    --radius: 14px;
+    --font-sans: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Cascadia Code', 'SF Mono', 'Consolas', monospace;
+    --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  :root, :root[data-theme='dark'] {
+    --bg: #060a14;
+    --grid: rgba(41, 182, 255, 0.05);
+    --surface: rgba(255, 255, 255, 0.03);
+    --surface-hover: rgba(41, 182, 255, 0.08);
+    --border: rgba(41, 182, 255, 0.16);
+    --border-strong: rgba(41, 182, 255, 0.35);
+    --text: #e9f2ff;
+    --text-dim: #8ba0bf;
+    --glow-blue: 0 0 22px rgba(41, 182, 255, 0.35);
+  }
+  :root[data-theme='light'] {
+    --bg: #eef4fb;
+    --grid: rgba(10, 132, 255, 0.06);
+    --surface: #ffffff;
+    --surface-hover: rgba(10, 132, 255, 0.06);
+    --border: rgba(10, 90, 160, 0.15);
+    --border-strong: rgba(10, 132, 255, 0.4);
+    --text: #0a1930;
+    --text-dim: #4a5d7a;
+    --glow-blue: 0 0 18px rgba(10, 132, 255, 0.2);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    padding: 32px 20px;
+    transition: background var(--transition), color var(--transition);
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      radial-gradient(circle at 12% 15%, rgba(41, 182, 255, 0.12), transparent 40%),
+      radial-gradient(circle at 88% 85%, rgba(0, 230, 160, 0.10), transparent 42%),
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+    pointer-events: none;
+  }
+  .wrap { width: min(880px, 100%); }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--blue);
+  }
+  h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 8px 0 6px; }
+  h1 .accent {
+    background: linear-gradient(90deg, var(--blue), var(--green));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sub { color: var(--text-dim); max-width: 56ch; margin-bottom: 30px; }
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .card {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color var(--transition), background var(--transition),
+                box-shadow var(--transition), transform var(--transition);
+  }
+  .card:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-strong);
+    box-shadow: var(--glow-blue);
+    transform: translateY(-2px);
+  }
+  .card .ico { font-size: 1.5rem; }
+  .card h2 { font-size: 1.02rem; margin: 10px 0 4px; }
+  .card p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.45; }
+  .card .go { display: inline-block; margin-top: 10px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--blue); }
+  .apidocs { margin-top: 26px; border-top: 1px solid var(--border); padding-top: 16px;
+             display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+  .apidocs span { color: var(--text-dim); font-size: 0.85rem; }
+  .apidocs a { font-family: var(--font-mono); font-size: 0.82rem; color: var(--green); text-decoration: none; }
+  .apidocs a:hover { text-decoration: underline; }
+  .theme-btn {
+    position: fixed; top: 18px; right: 18px;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 50%;
+    width: 42px; height: 42px; font-size: 1.1rem; cursor: pointer;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .theme-btn:hover { border-color: var(--border-strong); box-shadow: var(--glow-blue); }
+  .status-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 10px var(--green); margin-right: 8px;
+  }
+</style>
+</head>
+<body>
+  <button class="theme-btn" id="themeBtn" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+  <main class="wrap">
+    <div class="eyebrow"><span class="status-dot"></span>API en línea · v1.0</div>
+    <h1>BioMatrix <span class="accent">Labs</span></h1>
+    <p class="sub">
+      Backend del sistema de gestión de laboratorio científico. Esta es la API REST;
+      la aplicación para usuarios finales vive en el frontend.
+    </p>
+
+    <nav class="grid-cards">
+      <a class="card" href="{{ frontend_url }}/login">
+        <div class="ico">🧪</div>
+        <h2>Ingresar a la aplicación</h2>
+        <p>Login para administradores, científicos y asistentes.</p>
+        <span class="go">{{ frontend_url }}/login →</span>
+      </a>
+      <a class="card" href="{{ frontend_url }}/">
+        <div class="ico">📊</div>
+        <h2>Dashboard</h2>
+        <p>Indicadores, gráficas de resultados y actividad del laboratorio.</p>
+        <span class="go">{{ frontend_url }}/ →</span>
+      </a>
+      <a class="card" href="{{ frontend_url }}/r/projects">
+        <div class="ico">🔬</div>
+        <h2>Proyectos</h2>
+        <p>Proyectos de investigación, muestras, protocolos y resultados.</p>
+        <span class="go">{{ frontend_url }}/r/projects →</span>
+      </a>
+      <a class="card" href="{{ frontend_url }}/r/sample-tests">
+        <div class="ico">🗂️</div>
+        <h2>Tablero de resultados</h2>
+        <p>Kanban de pruebas: pendientes, completadas y rechazadas.</p>
+        <span class="go">{{ frontend_url }}/r/sample-tests →</span>
+      </a>
+    </nav>
+
+    <div class="apidocs">
+      <span>Para desarrolladores:</span>
+      <a href="/api/docs/swagger/">Swagger UI</a>
+      <a href="/api/docs/redoc/">Redoc</a>
+      <a href="/api/schema/">schema.yml</a>
+      <a href="/admin/">Django admin</a>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById('themeBtn');
+      function apply(theme) {
+        root.setAttribute('data-theme', theme);
+        btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+        localStorage.setItem('biomatrix-theme', theme);
+      }
+      var saved = localStorage.getItem('biomatrix-theme');
+      if (!saved) {
+        saved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      apply(saved);
+      btn.addEventListener('click', function () {
+        apply(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -27,3 +27,10 @@ media/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Documentación académica del curso (informe, póster, guiones):
+# no forma parte del código del proyecto
+docs/
+
+# Registro local de la carga de datos de demostración (seed_demo)
+.seed_demo_ids.json

@@ -5,6 +5,17 @@ Sistema de gestión de un laboratorio científico/clínico: científicos, asiste
 - **Backend** (este directorio + `BioMatrix_Labs/`): API REST documentada en esta guía.
 - **Frontend** ([`frontend/`](frontend/)): interfaz web con estética futurista de laboratorio, temas claro/oscuro y vistas diferenciadas por rol. Ver [frontend/README.md](frontend/README.md).
 
+## Estructura del repositorio
+
+| Carpeta / archivo | Descripción breve |
+|---|---|
+| [`BioMatrix_Labs/`](BioMatrix_Labs/) | Backend Django: proyecto `biomatrix` (settings, urls) y app `laboratory` (models, serializers, views, permisos, tests). |
+| [`BioMatrix_Labs/laboratory/models/`](BioMatrix_Labs/laboratory/models/) | 8 modelos de dominio: User, Scientist, Assistant, Project, Sample, Test, SampleTest, AssistantProject. |
+| [`BioMatrix_Labs/laboratory/serializers/`](BioMatrix_Labs/laboratory/serializers/) | Serialización, validación de negocio y auditoría (`created_by`/`modified_by`). |
+| [`frontend/`](frontend/) | SPA React 18 + TypeScript + Vite: login JWT, dashboard con gráficas, CRUD genérico, Kanban, exportación CSV. |
+| [`frontend/src/`](frontend/src/) | Código fuente del frontend (páginas, componentes, config declarativa de recursos). |
+| [`requirements.txt`](requirements.txt) | Dependencias de Python del backend. |
+
 ## Stack
 
 - Django 6.0 + Django REST Framework
@@ -48,6 +59,7 @@ Se leen desde `BioMatrix_Labs/.env` (no se commitea; ver `.env.example`).
 | `ALLOWED_HOSTS` | Lista separada por comas de hosts permitidos. |
 | `DATABASE_URL` | Si está definida (típico en Render/Heroku), tiene prioridad sobre las variables `DB_*`. |
 | `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | Credenciales directas de Postgres, usadas solo si `DATABASE_URL` no está definida. |
+| `FRONTEND_URL` | URL pública del frontend. La página de bienvenida del backend (`/`) enlaza aquí. Por defecto `http://localhost:5173`. |
 
 **Nota de seguridad:** la contraseña de Supabase que este proyecto usó originalmente estuvo hardcodeada en `settings.py` y fue commiteada al repositorio público. Si no la has rotado ya, hazlo desde el panel de Supabase (Settings → Database → Reset password) y actualiza tu `.env` local; el valor viejo debe considerarse comprometido de forma permanente aunque se haya borrado del código.
 
@@ -80,6 +92,7 @@ El login no usa el `TokenObtainPairView` por defecto de `simplejwt` porque este 
 
 | Recurso | Ruta |
 |---|---|
+| Bienvenida del backend (tema del frontend, enlaza a la app) | `/` |
 | Usuarios | `/api/users/` |
 | Científicos | `/api/scientists/` |
 | Asistentes | `/api/assistants/` |
@@ -103,6 +116,24 @@ python manage.py test
 ```
 
 Los tests corren contra SQLite en memoria (configurado en `settings.py`), así que no dependen de permisos de `CREATE DATABASE` en Postgres/Supabase ni de conectividad de red.
+
+## Datos de demostración
+
+Para poblar una instalación nueva con datos realistas (proyectos, muestras,
+protocolos y resultados en los tres estados), útil para probar el dashboard y el
+tablero Kanban con contenido:
+
+```bash
+cd BioMatrix_Labs
+python manage.py seed_demo                      # contraseña aleatoria, se muestra al terminar
+python manage.py seed_demo --password TuClave1  # o defínela tú
+python manage.py seed_demo --undo               # elimina exactamente lo que cargó
+```
+
+Requiere un admin existente (`create_admin`), que queda como autor en los campos
+de auditoría. Los identificadores de lo creado se guardan en
+`.seed_demo_ids.json` (ignorado por git), de modo que `--undo` borra solo esos
+registros y nunca toca datos reales.
 
 ## Limitaciones conocidas
 
